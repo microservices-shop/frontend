@@ -53,9 +53,6 @@ export const Navbar = () => {
                 </Button>
               </Link>
             </div>
-            {user?.role === 'admin' && (
-              <Link to="/admin" className="text-shop-red hover:underline text-sm font-medium whitespace-nowrap">Админ-панель</Link>
-            )}
           </div>
 
           {/* Search Bar */}
@@ -70,8 +67,19 @@ export const Navbar = () => {
             />
           </form>
 
-          {/* Icons (Cart, Orders, Profile) */}
+          {/* Icons (Admin, Cart, Orders, Profile) */}
           <div className="flex items-center gap-2 sm:gap-4">
+            {/* Кнопка админ-панели (пока видна всем) */}
+            <a
+              href="http://localhost:8000/admin"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center gap-2 px-4 h-11 bg-gray-100 hover:bg-gray-200 rounded-full text-sm font-medium transition-colors"
+            >
+              <LayoutGrid size={18} />
+              <span className="hidden lg:inline">Админ панель</span>
+            </a>
+
             <Link
               to="/cart"
               className="relative w-11 h-11 flex items-center justify-center rounded-full hover:bg-shop-gray transition-colors"
@@ -140,9 +148,15 @@ export const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t p-4 flex flex-col gap-4 animate-in slide-in-from-top-2">
           <Link to="/catalog" onClick={() => setIsMenuOpen(false)} className="text-lg font-medium border-b pb-2">Каталог</Link>
-          {user?.role === 'admin' && (
-            <Link to="/admin" onClick={() => setIsMenuOpen(false)} className="text-lg text-red-600">Админ-панель</Link>
-          )}
+          <a
+            href="http://localhost:8000/admin"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setIsMenuOpen(false)}
+            className="text-lg font-medium text-gray-700"
+          >
+            Админ панель
+          </a>
         </div>
       )}
     </nav>
