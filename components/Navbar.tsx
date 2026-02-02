@@ -69,9 +69,9 @@ export const Navbar = () => {
 
           {/* Icons (Admin, Cart, Orders, Profile) */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Кнопка админ-панели (пока видна всем) */}
+            {/* TODO: TEMPORARY - Direct link to Product Service Admin (No Gateway) */}
             <a
-              href="http://localhost:8000/admin"
+              href="http://localhost:8002/admin"
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:flex items-center gap-2 px-4 h-11 bg-gray-100 hover:bg-gray-200 rounded-full text-sm font-medium transition-colors"
@@ -148,8 +148,9 @@ export const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t p-4 flex flex-col gap-4 animate-in slide-in-from-top-2">
           <Link to="/catalog" onClick={() => setIsMenuOpen(false)} className="text-lg font-medium border-b pb-2">Каталог</Link>
+          {/* TODO: TEMPORARY - Direct link to Product Service Admin (No Gateway) */}
           <a
-            href="http://localhost:8000/admin"
+            href="http://localhost:8002/admin"
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setIsMenuOpen(false)}
