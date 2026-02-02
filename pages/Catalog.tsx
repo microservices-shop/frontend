@@ -1,9 +1,9 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { MOCK_PRODUCTS } from '../constants';
-import { Category, CATEGORY_LABELS } from '../types';
+import { Product, Category, CATEGORY_LABELS, mapApiProductToProduct } from '../types';
+import ProductService, { ApiCategory } from '../api/product.service';
 import { Button, Select } from '../components/UI';
-import { Star, SlidersHorizontal, ChevronRight, ChevronLeft } from 'lucide-react';
+import { SlidersHorizontal, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import { StaggerContainer, StaggerItem, FadeIn } from '../components/Animations';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -18,32 +18,70 @@ export const Catalog = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 9;
 
+    // API state
+    const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<ApiCategory[]>([]);
+    const [totalProducts, setTotalProducts] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Загрузка категорий
+    useEffect(() => {
+        ProductService.getCategories()
+            .then(setCategories)
+            .catch(err => console.error('Failed to load categories:', err));
+    }, []);
+
+    // Загрузка товаров
+    const loadProducts = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            // Передаём сортировку на бэкенд (сортировка до пагинации)
+            const response = await ProductService.getProducts(
+                currentPage,
+                ITEMS_PER_PAGE,
+                'price',  // сортируем по цене
+                sortOrder
+            );
+            const mappedProducts = response.items.map(p => mapApiProductToProduct(p, categories));
+
+            // Фильтрация на клиенте (TODO: переместить на бэкенд)
+            let filtered = mappedProducts.filter(p => p.isActive);
+
+            if (categoryParam) {
+                filtered = filtered.filter(p => p.category === categoryParam);
+            }
+
+            if (searchParam) {
+                const q = searchParam.toLowerCase();
+                filtered = filtered.filter(p => p.name.toLowerCase().includes(q));
+            }
+
+            setProducts(filtered);
+            setTotalProducts(response.total);
+        } catch (err) {
+            setError('Не удалось загрузить товары. Проверьте подключение к серверу.');
+            console.error('Failed to load products:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, [currentPage, categoryParam, searchParam, sortOrder, categories]);
+
+    useEffect(() => {
+        if (categories.length > 0) {
+            loadProducts();
+        }
+    }, [loadProducts, categories]);
+
     // Reset to page 1 when filters change
     useEffect(() => {
         setCurrentPage(1);
     }, [categoryParam, searchParam, sortOrder]);
 
-    const filteredProducts = useMemo(() => {
-        let result = MOCK_PRODUCTS.filter(p => p.isActive);
-
-        if (categoryParam) {
-            result = result.filter(p => p.category === categoryParam);
-        }
-
-        if (searchParam) {
-            const q = searchParam.toLowerCase();
-            result = result.filter(p => p.name.toLowerCase().includes(q));
-        }
-
-        return result.sort((a, b) => {
-            return sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
-        });
-    }, [categoryParam, searchParam, sortOrder]);
-
     // Pagination Logic
-    const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const displayedProducts = filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE) || 1;
+    const displayedProducts = products;
 
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -53,6 +91,28 @@ export const Catalog = () => {
         setCurrentPage(page);
         scrollToTop();
     };
+
+    // Loading state
+    if (loading && products.length === 0) {
+        return (
+            <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center">
+                <Loader2 className="w-12 h-12 animate-spin text-gray-400" />
+                <p className="mt-4 text-gray-500">Загрузка товаров...</p>
+            </div>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <div className="container mx-auto px-4 py-20 text-center">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-8 max-w-lg mx-auto">
+                    <p className="text-red-600 font-medium mb-4">{error}</p>
+                    <Button onClick={loadProducts}>Попробовать снова</Button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -142,7 +202,7 @@ export const Catalog = () => {
                         </h2>
                         <div className="flex items-center gap-2">
                             <span className="text-sm text-gray-500">
-                                Показано {startIndex + 1}-{Math.min(startIndex + ITEMS_PER_PAGE, filteredProducts.length)} из {filteredProducts.length}
+                                Показано {displayedProducts.length} из {totalProducts}
                             </span>
                             <div className="hidden md:flex items-center ml-4 z-20">
                                 <span className="text-sm mr-2 text-gray-500">Сортировка:</span>
@@ -163,7 +223,7 @@ export const Catalog = () => {
                         </div>
                     </FadeIn>
 
-                    {filteredProducts.length === 0 ? (
+                    {displayedProducts.length === 0 ? (
                         <div className="text-center py-20 bg-gray-50 rounded-xl">
                             <p className="text-xl text-gray-500">Товары не найдены.</p>
                             <Link to="/catalog"><Button variant="outline" className="mt-4">Сбросить фильтры</Button></Link>

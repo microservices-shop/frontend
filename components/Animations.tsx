@@ -25,8 +25,7 @@ export const FadeIn = ({ children, delay = 0, className = "", direction = "up" }
 export const StaggerContainer = ({ children, className = "", staggerDelay = 0.05, delay = 0 }: { children: React.ReactNode, className?: string, staggerDelay?: number, delay?: number }) => (
   <motion.div
     initial="hidden"
-    whileInView="show"
-    viewport={{ once: true, margin: "0px" }}
+    animate="show"
     variants={{
       hidden: {},
       show: {

@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MOCK_PRODUCTS } from '../constants';
-import { Product } from '../types';
+import { Product, mapApiProductToProduct } from '../types';
+import ProductService, { ApiCategory } from '../api/product.service';
 import { Button } from '../components/UI';
 import { FadeIn, StaggerContainer, StaggerItem } from '../components/Animations';
 import VantaBackground from '../components/VantaBackground';
 import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 
 const ProductCard: React.FC<{ product: Product }> = ({ product }) => (
     <StaggerItem className="h-full">
@@ -37,7 +38,28 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => (
 );
 
 export const Home = () => {
-    const newArrivals = MOCK_PRODUCTS.slice(0, 4);
+    const [newArrivals, setNewArrivals] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<ApiCategory[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const [productsRes, categoriesRes] = await Promise.all([
+                    ProductService.getProducts(1, 4),
+                    ProductService.getCategories()
+                ]);
+                setCategories(categoriesRes);
+                const mapped = productsRes.items.map(p => mapApiProductToProduct(p, categoriesRes));
+                setNewArrivals(mapped.filter(p => p.isActive).slice(0, 4));
+            } catch (err) {
+                console.error('Failed to load products:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadData();
+    }, []);
 
     return (
         <div className="pb-20 overflow-hidden">
@@ -101,11 +123,17 @@ export const Home = () => {
                     <h2 className="text-3xl md:text-5xl font-display font-extrabold text-center uppercase mb-12">Новинки</h2>
                 </FadeIn>
 
-                <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {newArrivals.map(product => (
-                        <ProductCard key={product.id} product={product} />
-                    ))}
-                </StaggerContainer>
+                {loading ? (
+                    <div className="flex justify-center py-12">
+                        <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+                    </div>
+                ) : (
+                    <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {newArrivals.map(product => (
+                            <ProductCard key={product.id} product={product} />
+                        ))}
+                    </StaggerContainer>
+                )}
 
                 <FadeIn direction="up" delay={0.4} className="flex justify-center mt-10">
                     <Link to="/catalog">

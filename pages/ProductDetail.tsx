@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { MOCK_PRODUCTS } from '../constants';
-import { Category, CATEGORY_LABELS } from '../types';
+import { Product, Category, CATEGORY_LABELS, mapApiProductToProduct } from '../types';
+import ProductService, { ApiCategory } from '../api/product.service';
 import { useCart } from '../store';
 import { Button } from '../components/UI';
-import { Star, Check, Minus, Plus, ChevronRight } from 'lucide-react';
+import { Minus, Plus, ChevronRight, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FadeIn } from '../components/Animations';
 
@@ -15,16 +15,60 @@ export const ProductDetail = () => {
     const [qty, setQty] = useState(1);
     const [selectedImage, setSelectedImage] = useState(0);
 
-    const product = MOCK_PRODUCTS.find(p => p.id === id);
-    const isInCart = items.find(i => i.productId === id);
+    // API state
+    const [product, setProduct] = useState<Product | null>(null);
+    const [categories, setCategories] = useState<ApiCategory[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const isInCart = product ? items.find(i => i.productId === product.id) : false;
 
     useEffect(() => {
-        if (!product) {
-            // navigate('/catalog');
-        }
-    }, [product, navigate]);
+        const loadProduct = async () => {
+            if (!id) return;
 
-    if (!product) return <div className="p-20 text-center">Товар не найден</div>;
+            setLoading(true);
+            setError(null);
+            try {
+                const [productRes, categoriesRes] = await Promise.all([
+                    ProductService.getProductById(Number(id)),
+                    ProductService.getCategories()
+                ]);
+                setCategories(categoriesRes);
+                setProduct(mapApiProductToProduct(productRes, categoriesRes));
+            } catch (err) {
+                setError('Товар не найден');
+                console.error('Failed to load product:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadProduct();
+    }, [id]);
+
+    // Loading state
+    if (loading) {
+        return (
+            <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center">
+                <Loader2 className="w-12 h-12 animate-spin text-gray-400" />
+                <p className="mt-4 text-gray-500">Загрузка товара...</p>
+            </div>
+        );
+    }
+
+    // Error state
+    if (error || !product) {
+        return (
+            <div className="container mx-auto px-4 py-20 text-center">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-8 max-w-lg mx-auto">
+                    <p className="text-red-600 font-medium mb-4">{error || 'Товар не найден'}</p>
+                    <Link to="/catalog">
+                        <Button>Вернуться в каталог</Button>
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     const handleAddToCart = () => {
         if (isInCart) {
@@ -45,7 +89,7 @@ export const ProductDetail = () => {
                     <>
                         <ChevronRight size={14} />
                         <Link to={`/catalog?category=${product.category}`} className="hover:text-black transition-colors">
-                            {CATEGORY_LABELS[product.category as Category]}
+                            {CATEGORY_LABELS[product.category as Category] || product.category}
                         </Link>
                     </>
                 )}
