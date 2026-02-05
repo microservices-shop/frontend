@@ -11,6 +11,7 @@ import { Profile } from './pages/Profile';
 import { Orders } from './pages/Orders';
 import { Admin } from './pages/Admin';
 import { AuthSuccess } from './pages/AuthSuccess';
+import { ProductForm } from './pages/admin/ProductForm';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -37,6 +38,7 @@ const App = () => {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/products/new" element={<ProductForm />} />
                 <Route path="/auth/success" element={<AuthSuccess />} />
               </Routes>
             </main>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, User as UserIcon, Search, Menu, X, LogIn, LayoutGrid, Package } from 'lucide-react';
+import { ShoppingCart, User as UserIcon, Search, Menu, X, LogIn, LayoutGrid, Package, Plus } from 'lucide-react';
 import { useAuth } from '../store';
 import { useCart } from '../store';
 import { Button } from './UI';
@@ -69,6 +69,16 @@ export const Navbar = () => {
 
           {/* Icons (Admin, Cart, Orders, Profile) */}
           <div className="flex items-center gap-2 sm:gap-4">
+            {/* Кнопка добавления товара */}
+            <Link
+              to="/admin/products/new"
+              className="hidden sm:flex items-center gap-2 px-4 h-11 bg-green-600 hover:bg-green-700 text-white rounded-full text-sm font-medium transition-colors"
+              title="Добавить товар"
+            >
+              <Plus size={18} />
+              <span className="hidden lg:inline">Добавить товар</span>
+            </Link>
+
             {/* Кнопка админ-панели (пока видна всем) */}
             <a
               href="http://localhost:8000/admin"
@@ -148,6 +158,13 @@ export const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t p-4 flex flex-col gap-4 animate-in slide-in-from-top-2">
           <Link to="/catalog" onClick={() => setIsMenuOpen(false)} className="text-lg font-medium border-b pb-2">Каталог</Link>
+          <Link
+            to="/admin/products/new"
+            onClick={() => setIsMenuOpen(false)}
+            className="text-lg font-medium text-green-600"
+          >
+            + Добавить товар
+          </Link>
           <a
             href="http://localhost:8000/admin"
             target="_blank"
