@@ -17,7 +17,6 @@ export interface ApiProduct {
     description: string | null;
     images: string[];
     stock: number;
-    rating: number;
     status: 'active' | 'archived';
     attributes: Record<string, string>;
     created_at: string;

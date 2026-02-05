@@ -19,7 +19,6 @@ export interface Product {
   oldPrice?: number;
   description: string;
   category: Category | string;
-  rating: number;
   images: string[];
   stock: number; // For inventory check
   isActive: boolean; // For soft delete check
@@ -91,7 +90,6 @@ export function mapApiProductToProduct(
     price: apiProduct.price / 100, // конвертируем копейки в рубли
     description: apiProduct.description || '',
     category: getCategorySlug(apiProduct.category_id, categories),
-    rating: apiProduct.rating,
     images: apiProduct.images.length > 0
       ? apiProduct.images
       : [getPlaceholderImage(apiProduct.category_id)],
