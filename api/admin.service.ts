@@ -1,5 +1,15 @@
-import api from './api';
+import axios from 'axios';
 import type { ApiProduct, ApiCategory } from './product.service';
+
+// Используем отдельный axios instance для product-service на порту 8002
+const PRODUCT_API_URL = import.meta.env.VITE_PRODUCT_SERVICE_URL || 'http://localhost:8002';
+const productApi = axios.create({
+    baseURL: PRODUCT_API_URL,
+    withCredentials: true,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
 
 // ============================================
 // Типы для атрибутов
@@ -32,7 +42,7 @@ const AdminService = {
      * Получить атрибуты категории
      */
     async getCategoryAttributes(categoryId: number): Promise<ApiAttribute[]> {
-        const response = await api.get<ApiAttribute[]>(`/api/v1/categories/${categoryId}/attributes`);
+        const response = await productApi.get<ApiAttribute[]>(`/api/v1/categories/${categoryId}/attributes`);
         return response.data;
     },
 
@@ -40,7 +50,7 @@ const AdminService = {
      * Создать новый товар
      */
     async createProduct(data: ProductCreatePayload): Promise<ApiProduct> {
-        const response = await api.post<ApiProduct>('/api/v1/products', data);
+        const response = await productApi.post<ApiProduct>('/api/v1/products', data);
         return response.data;
     },
 
@@ -48,7 +58,7 @@ const AdminService = {
      * Обновить товар
      */
     async updateProduct(id: number, data: Partial<ProductCreatePayload>): Promise<ApiProduct> {
-        const response = await api.patch<ApiProduct>(`/api/v1/products/${id}`, data);
+        const response = await productApi.patch<ApiProduct>(`/api/v1/products/${id}`, data);
         return response.data;
     },
 
@@ -56,14 +66,14 @@ const AdminService = {
      * Удалить товар
      */
     async deleteProduct(id: number): Promise<void> {
-        await api.delete(`/api/v1/products/${id}`);
+        await productApi.delete(`/api/v1/products/${id}`);
     },
 
     /**
      * Получить все категории
      */
     async getCategories(): Promise<ApiCategory[]> {
-        const response = await api.get<ApiCategory[]>('/api/v1/categories');
+        const response = await productApi.get<ApiCategory[]>('/api/v1/categories');
         return response.data;
     },
 };
