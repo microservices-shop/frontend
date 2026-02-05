@@ -257,7 +257,7 @@ export const ProductForm = () => {
                             {categoryAttributes.length === 0 && !loadingAttributes ? (
                                 <p className="text-gray-500 text-sm">
                                     Для этой категории нет определённых атрибутов.
-                                    Можете добавить их в <a href="http://localhost:8000/admin" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">SQLAdmin</a>.
+                                    Можете добавить их в <a href="http://localhost:8002/admin" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">SQLAdmin</a>.
                                 </p>
                             ) : (
                                 <div className="space-y-4">

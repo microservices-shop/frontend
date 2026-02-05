@@ -81,7 +81,7 @@ export const Navbar = () => {
 
             {/* Кнопка админ-панели (пока видна всем) */}
             <a
-              href="http://localhost:8000/admin"
+              href="http://localhost:8002/admin"
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:flex items-center gap-2 px-4 h-11 bg-gray-100 hover:bg-gray-200 rounded-full text-sm font-medium transition-colors"
@@ -166,7 +166,7 @@ export const Navbar = () => {
             + Добавить товар
           </Link>
           <a
-            href="http://localhost:8000/admin"
+            href="http://localhost:8002/admin"
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setIsMenuOpen(false)}
@@ -174,8 +174,8 @@ export const Navbar = () => {
           >
             Админ панель
           </a>
-        </div>
+        </div >
       )}
-    </nav>
+    </nav >
   );
 };
