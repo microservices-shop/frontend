@@ -37,16 +37,17 @@ export const Catalog = () => {
         setLoading(true);
         setError(null);
         try {
-            // Передаём сортировку на бэкенд (сортировка до пагинации)
+            // Загружаем все товары для клиентской фильтрации
+            // TODO: переместить фильтрацию на бэкенд для оптимизации
             const response = await ProductService.getProducts(
-                currentPage,
-                ITEMS_PER_PAGE,
-                'price',  // сортируем по цене
+                1,
+                1000,  // Загружаем много товаров для клиентской фильтрации
+                'price',
                 sortOrder
             );
             const mappedProducts = response.items.map(p => mapApiProductToProduct(p, categories));
 
-            // Фильтрация на клиенте (TODO: переместить на бэкенд)
+            // Фильтрация на клиенте
             let filtered = mappedProducts.filter(p => p.isActive);
 
             if (categoryParam) {
@@ -59,14 +60,14 @@ export const Catalog = () => {
             }
 
             setProducts(filtered);
-            setTotalProducts(response.total);
+            setTotalProducts(filtered.length);  // Используем реальное количество отфильтрованных товаров
         } catch (err) {
             setError('Не удалось загрузить товары. Проверьте подключение к серверу.');
             console.error('Failed to load products:', err);
         } finally {
             setLoading(false);
         }
-    }, [currentPage, categoryParam, searchParam, sortOrder, categories]);
+    }, [categoryParam, searchParam, sortOrder, categories]);
 
     useEffect(() => {
         if (categories.length > 0) {
@@ -79,9 +80,10 @@ export const Catalog = () => {
         setCurrentPage(1);
     }, [categoryParam, searchParam, sortOrder]);
 
-    // Pagination Logic
+    // Pagination Logic - клиентская пагинация
     const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE) || 1;
-    const displayedProducts = products;
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const displayedProducts = products.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
