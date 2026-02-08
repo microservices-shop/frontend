@@ -153,8 +153,9 @@ export const Catalog = () => {
 
                     <div className="space-y-6 border-t pt-6">
                         <div>
-                            <h4 className="font-bold mb-3">Категория</h4>
+                            <h4 className="text-lg font-bold font-display mb-3">Категория</h4>
                             <div className="space-y-2 flex flex-col text-gray-600">
+                                <Link to="/catalog" className={!categoryParam ? 'text-black font-bold' : ''}>Все товары</Link>
                                 {Object.values(Category).map(cat => (
                                     <Link
                                         key={cat}
@@ -164,12 +165,11 @@ export const Catalog = () => {
                                         {CATEGORY_LABELS[cat]}
                                     </Link>
                                 ))}
-                                <Link to="/catalog" className={!categoryParam ? 'text-black font-bold' : ''}>Все товары</Link>
                             </div>
                         </div>
 
                         <div>
-                            <h4 className="font-bold mb-3">Цена</h4>
+                            <h4 className="text-lg font-bold font-display mb-3">Цена</h4>
                             <input type="range" min="0" max="500000" className="w-full accent-black cursor-pointer" />
                             <div className="flex justify-between text-xs font-medium mt-2">
                                 <span>₽0</span>
@@ -195,8 +195,9 @@ export const Catalog = () => {
                             </div>
                             <div className="space-y-6 border-t pt-6">
                                 <div>
-                                    <h4 className="font-bold mb-3">Категория</h4>
+                                    <h4 className="text-lg font-bold font-display mb-3">Категория</h4>
                                     <div className="space-y-2 flex flex-col text-gray-600">
+                                        <Link to="/catalog" className={!categoryParam ? 'text-black font-bold' : ''} onClick={() => setShowMobileFilters(false)}>Все товары</Link>
                                         {Object.values(Category).map(cat => (
                                             <Link
                                                 key={cat}
@@ -207,7 +208,6 @@ export const Catalog = () => {
                                                 {CATEGORY_LABELS[cat]}
                                             </Link>
                                         ))}
-                                        <Link to="/catalog" className={!categoryParam ? 'text-black font-bold' : ''} onClick={() => setShowMobileFilters(false)}>Все товары</Link>
                                     </div>
                                 </div>
                             </div>
