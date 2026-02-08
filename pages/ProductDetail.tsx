@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { Product, Category, CATEGORY_LABELS, mapApiProductToProduct } from '../types';
 import ProductService, { ApiCategory } from '../api/product.service';
 import { useCart } from '../store';
@@ -11,6 +11,7 @@ import { FadeIn } from '../components/Animations';
 export const ProductDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { addToCart, items } = useCart();
     const [qty, setQty] = useState(1);
     const [selectedImage, setSelectedImage] = useState(0);
@@ -22,6 +23,16 @@ export const ProductDetail = () => {
     const [error, setError] = useState<string | null>(null);
 
     const isInCart = product ? items.find(i => i.productId === product.id) : false;
+
+    // Navigation Context Logic
+    const fromLocation = location.state?.from;
+    const fromSearchParams = fromLocation ? new URLSearchParams(fromLocation.search) : null;
+    const fromCategory = fromSearchParams?.get('category');
+
+    // Determine the "Back" link target (Catalog with filters vs clean Catalog)
+    const backLink = fromLocation ?
+        { pathname: fromLocation.pathname, search: fromLocation.search } :
+        '/catalog';
 
     useEffect(() => {
         const loadProduct = async () => {
@@ -84,12 +95,22 @@ export const ProductDetail = () => {
             <FadeIn className="flex items-center gap-2 text-sm text-gray-500 mb-6" delay={0.1}>
                 <Link to="/" className="hover:text-black transition-colors">Главная</Link>
                 <ChevronRight size={14} />
-                <Link to="/catalog" className="hover:text-black transition-colors">Каталог</Link>
-                {product?.category && (
+                <Link to={backLink as any} className="hover:text-black transition-colors">Каталог</Link>
+
+                {/* 
+                    Logic: 
+                    1. If we came from a category filter, show that category.
+                    2. If we came from "All Products" (no category filter), DO NOT show category.
+                    3. If we visited directly (no state), show the product's category as fallback.
+                */}
+                {(fromCategory || (!fromLocation && product?.category)) && (
                     <>
                         <ChevronRight size={14} />
-                        <Link to={`/catalog?category=${product.category}`} className="hover:text-black transition-colors">
-                            {CATEGORY_LABELS[product.category as Category] || product.category}
+                        <Link
+                            to={`/catalog?category=${fromCategory || product.category}`}
+                            className="hover:text-black transition-colors"
+                        >
+                            {CATEGORY_LABELS[(fromCategory || product.category) as Category] || (fromCategory || product.category)}
                         </Link>
                     </>
                 )}
