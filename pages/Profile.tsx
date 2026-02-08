@@ -22,7 +22,7 @@ export const Profile = () => {
                 {/* User Info Card */}
                 <div className="w-full max-w-md">
                     <div className="bg-white border rounded-2xl p-6 text-center">
-                        <img src={user.picture_url} className="w-32 h-32 rounded-full mx-auto mb-6 border-4 border-gray-50" />
+                        <img src={user.picture_url} referrerPolicy="no-referrer" className="w-32 h-32 rounded-full mx-auto mb-6 border-4 border-gray-50" />
                         <h2 className="text-2xl font-bold mb-1">{user.name}</h2>
                         <p className="text-gray-500 mb-8">{user.email}</p>
                         <div className="space-y-3">

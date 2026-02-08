@@ -123,6 +123,7 @@ export const Navbar = () => {
                 <img
                   src={user.picture_url}
                   alt="Профиль"
+                  referrerPolicy="no-referrer"
                   className="w-11 h-11 rounded-full border border-gray-200 object-cover"
                 />
               </Link>
