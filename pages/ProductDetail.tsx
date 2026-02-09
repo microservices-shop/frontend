@@ -95,22 +95,12 @@ export const ProductDetail = () => {
             <FadeIn className="flex items-center gap-2 text-sm text-gray-500 mb-6" delay={0.1}>
                 <Link to="/" className="hover:text-black transition-colors">Главная</Link>
                 <ChevronRight size={14} />
-                <Link to={backLink as any} className="hover:text-black transition-colors">Каталог</Link>
-
-                {/* 
-                    Logic: 
-                    1. If we came from a category filter, show that category.
-                    2. If we came from "All Products" (no category filter), DO NOT show category.
-                    3. If we visited directly (no state), show the product's category as fallback.
-                */}
-                {(fromCategory || (!fromLocation && product?.category)) && (
+                <Link to="/catalog" className="hover:text-black transition-colors">Каталог</Link>
+                {product?.category && (
                     <>
                         <ChevronRight size={14} />
-                        <Link
-                            to={`/catalog?category=${fromCategory || product.category}`}
-                            className="hover:text-black transition-colors"
-                        >
-                            {CATEGORY_LABELS[(fromCategory || product.category) as Category] || (fromCategory || product.category)}
+                        <Link to={`/catalog?category=${product.category}`} className="hover:text-black transition-colors">
+                            {CATEGORY_LABELS[product.category as Category] || product.category}
                         </Link>
                     </>
                 )}
