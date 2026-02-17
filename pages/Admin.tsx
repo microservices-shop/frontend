@@ -1,34 +1,104 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../store';
 import { Navigate } from 'react-router-dom';
-import { MOCK_PRODUCTS } from '../constants';
-import { Product, Category, CATEGORY_LABELS } from '../types';
+import { Product, mapApiProductToProduct } from '../types';
+import ProductService, { ApiCategory } from '../api/product.service';
+import AdminService from '../api/admin.service';
 import { Button, Input, Modal } from '../components/UI';
-import { Plus, Trash2, Edit2, Save } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, Loader2 } from 'lucide-react';
 
 export const Admin = () => {
     const { user } = useAuth();
-    const [products, setProducts] = useState(MOCK_PRODUCTS);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<ApiCategory[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+    const [saving, setSaving] = useState(false);
 
     if (!user || user.role !== 'admin') return <Navigate to="/" />;
 
-    const handleDelete = (id: string) => {
-        if (confirm("Вы уверены? Это действие временно удалит товар.")) {
-            setProducts(prev => prev.map(p => p.id === id ? { ...p, isActive: false } : p));
+    // Load products and categories from API
+    useEffect(() => {
+        const loadData = async () => {
+            setLoading(true);
+            try {
+                const [productsRes, categoriesRes] = await Promise.all([
+                    ProductService.getProducts(1, 100, 'id', 'desc'),
+                    ProductService.getCategories(),
+                ]);
+                setCategories(categoriesRes);
+                setProducts(productsRes.items.map(p => mapApiProductToProduct(p, categoriesRes)));
+            } catch (err) {
+                console.error('Failed to load admin data:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadData();
+    }, []);
+
+    const handleDelete = async (id: string) => {
+        if (confirm("Вы уверены? Это действие удалит товар.")) {
+            try {
+                await AdminService.deleteProduct(Number(id));
+                setProducts(prev => prev.filter(p => p.id !== id));
+            } catch (err) {
+                console.error('Failed to delete product:', err);
+                alert('Ошибка при удалении товара');
+            }
         }
     };
 
-    const handleSave = () => {
-        // Save logic would go to API here
-        if (editingProduct?.id) {
-            setProducts(prev => prev.map(p => p.id === editingProduct.id ? editingProduct as Product : p));
-        } else {
-            const newProduct = { ...editingProduct, id: `p${Date.now()}`, isActive: true } as Product;
-            setProducts(prev => [...prev, newProduct]);
+    const handleSave = async () => {
+        if (!editingProduct) return;
+        setSaving(true);
+
+        try {
+            // Find the category_id from category slug
+            const categoryMatch = categories.find(c =>
+                c.title === editingProduct.category || c.id.toString() === editingProduct.category
+            );
+
+            if (editingProduct.id) {
+                // Update existing product
+                const updatedApi = await AdminService.updateProduct(Number(editingProduct.id), {
+                    title: editingProduct.name,
+                    price: Math.round((editingProduct.price || 0) * 100), // рубли -> копейки
+                    stock: editingProduct.stock,
+                    category_id: categoryMatch?.id,
+                    description: editingProduct.description,
+                    images: editingProduct.images,
+                    attributes: editingProduct.attributes,
+                });
+                const updated = mapApiProductToProduct(updatedApi, categories);
+                setProducts(prev => prev.map(p => p.id === updated.id ? updated : p));
+            } else {
+                // Create new product
+                if (!categoryMatch) {
+                    alert('Пожалуйста, выберите категорию');
+                    setSaving(false);
+                    return;
+                }
+                const createdApi = await AdminService.createProduct({
+                    title: editingProduct.name || 'Новый товар',
+                    price: Math.round((editingProduct.price || 0) * 100),
+                    stock: editingProduct.stock || 0,
+                    category_id: categoryMatch.id,
+                    description: editingProduct.description || '',
+                    images: editingProduct.images || [],
+                    attributes: editingProduct.attributes || {},
+                });
+                const created = mapApiProductToProduct(createdApi, categories);
+                setProducts(prev => [created, ...prev]);
+            }
+            setIsModalOpen(false);
+        } catch (err) {
+            console.error('Failed to save product:', err);
+            alert('Ошибка при сохранении товара');
+        } finally {
+            setSaving(false);
         }
-        setIsModalOpen(false);
     };
 
     const handleAttributeChange = (key: string, value: string, oldKey?: string) => {
@@ -45,6 +115,15 @@ export const Admin = () => {
         delete newAttrs[key];
         setEditingProduct(prev => ({ ...prev, attributes: newAttrs }));
     };
+
+    if (loading) {
+        return (
+            <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center">
+                <Loader2 className="w-12 h-12 animate-spin text-gray-400" />
+                <p className="mt-4 text-gray-500">Загрузка данных...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -74,12 +153,12 @@ export const Admin = () => {
                                     <img src={p.images[0]} className="w-10 h-10 object-contain" />
                                     <span className="font-medium">{p.name}</span>
                                 </td>
-                                <td className="p-4 text-sm">{CATEGORY_LABELS[p.category as Category] || p.category}</td>
+                                <td className="p-4 text-sm">{p.category}</td>
                                 <td className="p-4 font-bold">₽{p.price.toLocaleString()}</td>
                                 <td className="p-4 text-sm">{p.stock}</td>
                                 <td className="p-4">
                                     <span className={`text-xs px-2 py-1 rounded-full ${p.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                        {p.isActive ? 'Активен' : 'Удален'}
+                                        {p.isActive ? 'Активен' : 'Архив'}
                                     </span>
                                 </td>
                                 <td className="p-4 text-right">
@@ -97,7 +176,7 @@ export const Admin = () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title={editingProduct?.id ? "Редактировать товар" : "Новый товар"}
-                footer={<Button fullWidth onClick={handleSave}>Сохранить изменения</Button>}
+                footer={<Button fullWidth onClick={handleSave} disabled={saving}>{saving ? 'Сохранение...' : 'Сохранить изменения'}</Button>}
             >
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                     <Input
@@ -126,7 +205,7 @@ export const Admin = () => {
                             onChange={e => setEditingProduct(prev => ({ ...prev, category: e.target.value }))}
                         >
                             <option value="">Выберите категорию</option>
-                            {Object.values(Category).map(c => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
+                            {categories.map(c => <option key={c.id} value={c.id.toString()}>{c.title}</option>)}
                         </select>
                     </div>
 

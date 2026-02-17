@@ -1,9 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart, useAuth } from '../store';
-import { MOCK_PRODUCTS } from '../constants';
+import { Product, mapApiProductToProduct } from '../types';
+import ProductService from '../api/product.service';
 import { Button, Modal, Alert, Input } from '../components/UI';
-import { Trash2, ArrowRight, Minus, Plus } from 'lucide-react';
+import { Trash2, ArrowRight, Minus, Plus, Loader2 } from 'lucide-react';
+
+interface SmartCartItem {
+    productId: string;
+    quantity: number;
+    snapshotPrice: number;
+    product: Product;
+    liveProduct: Product | null;
+    livePrice: number;
+    isPriceChanged: boolean;
+    isUnavailable: boolean;
+    isDeleted: boolean;
+    stockLimit: number;
+}
 
 export const Cart = () => {
     const { items, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
@@ -11,38 +25,60 @@ export const Cart = () => {
     const navigate = useNavigate();
     const [checkoutError, setCheckoutError] = useState<string | null>(null);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [smartItems, setSmartItems] = useState<SmartCartItem[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // Re-hydrate items with current catalog data to check for price changes/availability
-    const smartItems = items.map(item => {
-        const liveProduct = MOCK_PRODUCTS.find(p => p.id === item.productId);
-
-        // Fallback if product completely deleted from DB (shouldn't happen with soft delete, but safety first)
-        if (!liveProduct) {
-            return {
-                ...item,
-                isDeleted: true,
-                livePrice: item.snapshotPrice,
-                liveProduct: null,
-                isPriceChanged: false,
-                isUnavailable: true,
-                stockLimit: 0
-            };
+    // Fetch live product data for all cart items
+    useEffect(() => {
+        if (items.length === 0) {
+            setSmartItems([]);
+            setLoading(false);
+            return;
         }
 
-        return {
-            ...item,
-            liveProduct,
-            livePrice: liveProduct.price,
-            isPriceChanged: liveProduct.price !== item.snapshotPrice,
-            isUnavailable: !liveProduct.isActive || liveProduct.stock === 0,
-            stockLimit: liveProduct.stock,
-            isDeleted: false
-        };
-    });
+        const fetchLiveData = async () => {
+            setLoading(true);
+            const results: SmartCartItem[] = [];
+            const categories = await ProductService.getCategories();
 
-    const hasUnavailableItems = smartItems.some(i => i.isUnavailable || (i.isDeleted));
+            for (const item of items) {
+                try {
+                    const apiProduct = await ProductService.getProductById(Number(item.productId));
+                    const liveProduct = mapApiProductToProduct(apiProduct, categories);
+
+                    results.push({
+                        ...item,
+                        liveProduct,
+                        livePrice: liveProduct.price,
+                        isPriceChanged: liveProduct.price !== item.snapshotPrice,
+                        isUnavailable: !liveProduct.isActive || liveProduct.stock === 0,
+                        stockLimit: liveProduct.stock,
+                        isDeleted: false,
+                    });
+                } catch {
+                    // Product not found or API error
+                    results.push({
+                        ...item,
+                        liveProduct: null,
+                        livePrice: item.snapshotPrice,
+                        isPriceChanged: false,
+                        isUnavailable: true,
+                        stockLimit: 0,
+                        isDeleted: true,
+                    });
+                }
+            }
+
+            setSmartItems(results);
+            setLoading(false);
+        };
+
+        fetchLiveData();
+    }, [items]);
+
+    const hasUnavailableItems = smartItems.some(i => i.isUnavailable || i.isDeleted);
     const deliveryFee = 500;
-    const finalTotal = cartTotal + deliveryFee; // Note: In real app, calculate total based on LIVE prices, here using snapshot for simplicity unless updated
+    const finalTotal = cartTotal + deliveryFee;
 
     const handleCheckout = async () => {
         setCheckoutError(null);
@@ -53,8 +89,7 @@ export const Cart = () => {
             return;
         }
 
-        // 2. Stock Validation (Mocking Order Service 400 Bad Request)
-        // Let's assume if any item quantity > liveProduct.stock, we throw error
+        // 2. Stock Validation
         const stockErrorItem = smartItems.find(item =>
             item.liveProduct && item.quantity > item.liveProduct.stock
         );
@@ -73,6 +108,15 @@ export const Cart = () => {
         setIsSuccess(true);
         clearCart();
     };
+
+    if (loading) {
+        return (
+            <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center">
+                <Loader2 className="w-12 h-12 animate-spin text-gray-400" />
+                <p className="mt-4 text-gray-500">Загрузка корзины...</p>
+            </div>
+        );
+    }
 
     if (items.length === 0 && !isSuccess) {
         return (

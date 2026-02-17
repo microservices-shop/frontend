@@ -37,26 +37,44 @@ export interface ApiProductListResponse {
     total: number;
     page: number;
     page_size: number;
-    pages: number;
+    total_pages: number;
 }
 
 // ============================================
 // Service Methods
 // ============================================
 
+export interface ProductFilters {
+    search?: string;
+    categoryId?: number;
+    priceMin?: number;
+    priceMax?: number;
+}
+
 const ProductService = {
     /**
-     * Получить список товаров с пагинацией и сортировкой
+     * Получить список товаров с пагинацией, сортировкой и фильтрацией
      */
     async getProducts(
         page: number = 1,
         pageSize: number = 20,
         sortBy: 'price' | 'id' | 'title' | 'created_at' = 'id',
-        sortOrder: 'asc' | 'desc' = 'asc'
+        sortOrder: 'asc' | 'desc' = 'asc',
+        filters?: ProductFilters
     ): Promise<ApiProductListResponse> {
-        const response = await productApi.get<ApiProductListResponse>('/api/v1/products', {
-            params: { page, page_size: pageSize, sort_by: sortBy, sort_order: sortOrder }
-        });
+        const params: Record<string, any> = {
+            page,
+            page_size: pageSize,
+            sort_by: sortBy,
+            sort_order: sortOrder,
+        };
+
+        if (filters?.search) params.search = filters.search;
+        if (filters?.categoryId) params.category_id = filters.categoryId;
+        if (filters?.priceMin !== undefined && filters.priceMin > 0) params.price_min = filters.priceMin;
+        if (filters?.priceMax !== undefined && filters.priceMax > 0) params.price_max = filters.priceMax;
+
+        const response = await productApi.get<ApiProductListResponse>('/api/v1/products', { params });
         return response.data;
     },
 
@@ -78,3 +96,4 @@ const ProductService = {
 };
 
 export default ProductService;
+

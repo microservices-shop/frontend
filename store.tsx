@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, CartItem, Product } from './types';
-import { MOCK_PRODUCTS } from './constants';
 import AuthService from './api/auth.service';
 import { setAccessToken } from './api/api';
 
