@@ -69,30 +69,26 @@ export const Navbar = () => {
 
           {/* Icons (Admin, Cart, Orders, Profile) */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {user?.role === 'admin' && (
-              <>
-                {/* Кнопка добавления товара */}
-                <Link
-                  to="/admin/products/new"
-                  className="hidden sm:flex items-center gap-2 px-4 h-11 bg-green-600 hover:bg-green-700 text-white rounded-full text-sm font-medium transition-colors"
-                  title="Добавить товар"
-                >
-                  <Plus size={18} />
-                  <span className="hidden lg:inline">Добавить товар</span>
-                </Link>
+            {/* Кнопка добавления товара */}
+            <Link
+              to="/admin/products/new"
+              className="hidden sm:flex items-center gap-2 px-4 h-11 bg-green-600 hover:bg-green-700 text-white rounded-full text-sm font-medium transition-colors"
+              title="Добавить товар"
+            >
+              <Plus size={18} />
+              <span className="hidden lg:inline">Добавить товар</span>
+            </Link>
 
-                {/* Кнопка админ-панели */}
-                <a
-                  href="http://localhost:8002/admin"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hidden sm:flex items-center gap-2 px-4 h-11 bg-gray-100 hover:bg-gray-200 rounded-full text-sm font-medium transition-colors"
-                >
-                  <LayoutGrid size={18} />
-                  <span className="hidden lg:inline">Админ панель</span>
-                </a>
-              </>
-            )}
+            {/* Кнопка админ-панели */}
+            <a
+              href="http://localhost:8002/admin"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center gap-2 px-4 h-11 bg-gray-100 hover:bg-gray-200 rounded-full text-sm font-medium transition-colors"
+            >
+              <LayoutGrid size={18} />
+              <span className="hidden lg:inline">Админ панель</span>
+            </a>
 
             <Link
               to="/cart"
@@ -163,26 +159,22 @@ export const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t p-4 flex flex-col gap-4 animate-in slide-in-from-top-2">
           <Link to="/catalog" onClick={() => setIsMenuOpen(false)} className="text-lg font-medium border-b pb-2">Каталог</Link>
-          {user?.role === 'admin' && (
-            <>
-              <Link
-                to="/admin/products/new"
-                onClick={() => setIsMenuOpen(false)}
-                className="text-lg font-medium text-green-600"
-              >
-                + Добавить товар
-              </Link>
-              <a
-                href="http://localhost:8002/admin"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setIsMenuOpen(false)}
-                className="text-lg font-medium text-gray-700"
-              >
-                Админ панель
-              </a>
-            </>
-          )}
+          <Link
+            to="/admin/products/new"
+            onClick={() => setIsMenuOpen(false)}
+            className="text-lg font-medium text-green-600"
+          >
+            + Добавить товар
+          </Link>
+          <a
+            href="http://localhost:8002/admin"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setIsMenuOpen(false)}
+            className="text-lg font-medium text-gray-700"
+          >
+            Админ панель
+          </a>
         </div >
       )}
     </nav >
