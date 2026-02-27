@@ -14,7 +14,7 @@ const AuthService = {
      */
     loginWithGoogle() {
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-        window.location.href = `${API_BASE_URL}/api/v1/auth/google`;
+        window.location.href = `${API_BASE_URL}/api/auth/google`;
     },
 
     /**
@@ -26,7 +26,7 @@ const AuthService = {
             return refreshPromise;
         }
 
-        refreshPromise = api.post<TokenResponse>('/api/v1/auth/refresh')
+        refreshPromise = api.post<TokenResponse>('/api/auth/refresh')
             .then(response => response.data)
             .finally(() => {
                 refreshPromise = null;
@@ -39,14 +39,14 @@ const AuthService = {
      * Logout user and clear cookies.
      */
     async logout(): Promise<void> {
-        await api.post('/api/v1/auth/logout');
+        await api.post('/api/auth/logout');
     },
 
     /**
      * Get current user profile.
      */
     async getMe(): Promise<User> {
-        const response = await api.get<User>('/api/v1/users/me');
+        const response = await api.get<User>('/api/users/me');
         return response.data;
     },
 
@@ -54,7 +54,7 @@ const AuthService = {
      * Update user profile.
      */
     async updateMe(data: { name: string }): Promise<User> {
-        const response = await api.patch<User>('/api/v1/users/me', data);
+        const response = await api.patch<User>('/api/users/me', data);
         return response.data;
     }
 };

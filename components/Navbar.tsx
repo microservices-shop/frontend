@@ -81,7 +81,7 @@ export const Navbar = () => {
 
             {/* Кнопка админ-панели */}
             <a
-              href="http://localhost:8002/admin"
+              href={import.meta.env.VITE_ADMIN_PANEL_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:flex items-center gap-2 px-4 h-11 bg-gray-100 hover:bg-gray-200 rounded-full text-sm font-medium transition-colors"
@@ -167,7 +167,7 @@ export const Navbar = () => {
             + Добавить товар
           </Link>
           <a
-            href="http://localhost:8002/admin"
+            href={import.meta.env.VITE_ADMIN_PANEL_URL}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setIsMenuOpen(false)}

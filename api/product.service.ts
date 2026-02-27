@@ -1,12 +1,8 @@
 import api from './api';
 import axios from 'axios';
 
-// TODO: TEMPORARY - Direct connection to Product Service (No Gateway)
-const PRODUCT_API_URL = import.meta.env.VITE_PRODUCT_SERVICE_URL || 'http://localhost:8002';
-const productApi = axios.create({
-    baseURL: PRODUCT_API_URL,
-    withCredentials: true,
-});
+// Use common API instance that handles authentication and base URL
+// import api from './api';
 
 // ============================================
 // API Response Types (соответствуют бэкенду)
@@ -74,7 +70,7 @@ const ProductService = {
         if (filters?.priceMin !== undefined && filters.priceMin > 0) params.price_min = filters.priceMin;
         if (filters?.priceMax !== undefined && filters.priceMax > 0) params.price_max = filters.priceMax;
 
-        const response = await productApi.get<ApiProductListResponse>('/api/v1/products', { params });
+        const response = await api.get<ApiProductListResponse>('/api/products', { params });
         return response.data;
     },
 
@@ -82,7 +78,7 @@ const ProductService = {
      * Получить товар по ID
      */
     async getProductById(id: number): Promise<ApiProduct> {
-        const response = await productApi.get<ApiProduct>(`/api/v1/products/${id}`);
+        const response = await api.get<ApiProduct>(`/api/products/${id}`);
         return response.data;
     },
 
@@ -90,7 +86,7 @@ const ProductService = {
      * Получить все категории
      */
     async getCategories(): Promise<ApiCategory[]> {
-        const response = await productApi.get<ApiCategory[]>('/api/v1/categories');
+        const response = await api.get<ApiCategory[]>('/api/categories');
         return response.data;
     },
 };
