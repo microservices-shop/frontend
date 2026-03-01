@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { Product, Category, CATEGORY_LABELS, mapApiProductToProduct } from '../types';
 import ProductService, { ApiCategory } from '../api/product.service';
-import { useCart } from '../store';
+import { useCart, useAuth } from '../store';
 import { Button } from '../components/UI';
 import { Minus, Plus, ChevronRight, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,6 +12,7 @@ export const ProductDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
+    const { user, login } = useAuth();
     const { addToCart, items } = useCart();
     const [qty, setQty] = useState(1);
     const [selectedImage, setSelectedImage] = useState(0);
@@ -22,7 +23,7 @@ export const ProductDetail = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const isInCart = product ? items.find(i => i.productId === product.id) : false;
+    const isInCart = product ? items.find(i => String(i.product_id) === String(product.id)) : false;
 
     // Navigation Context Logic
     const fromLocation = location.state?.from;
@@ -82,10 +83,21 @@ export const ProductDetail = () => {
     }
 
     const handleAddToCart = () => {
+        if (!user) {
+            // Сохраняем намерение добавить товар перед редиректом на OAuth
+            sessionStorage.setItem('pendingCartAction', JSON.stringify({
+                productId: Number(product.id),
+                quantity: qty,
+                returnUrl: `/product/${product.id}`,
+            }));
+            login();
+            return;
+        }
+
         if (isInCart) {
             navigate('/cart');
         } else {
-            addToCart(product);
+            addToCart(Number(product.id), qty);
         }
     };
 

@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { User, CartItem, Product } from './types';
+import { User } from './types';
 import AuthService from './api/auth.service';
 import { setAccessToken } from './api/api';
+import { CartService, ApiCartItem } from './api/cart.service';
 
 // --- Auth Context ---
 interface AuthContextType {
@@ -88,73 +89,127 @@ export const useAuth = () => {
 
 // --- Cart Context ---
 interface CartContextType {
-  items: CartItem[];
-  addToCart: (product: Product) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, delta: number) => void;
-  clearCart: () => void;
+  items: ApiCartItem[];
+  addToCart: (productId: number, quantity?: number) => Promise<void>;
+  removeFromCart: (itemId: string) => Promise<void>;
+  updateQuantity: (itemId: string, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
   cartTotal: number;
   itemCount: number;
+  isLoading: boolean;
+  error: string | null;
+  refreshCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const { user } = useAuth();
+  const [items, setItems] = useState<ApiCartItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load cart from local storage
-  useEffect(() => {
-    const savedCart = localStorage.getItem('shop_cart');
-    if (savedCart) {
-      setItems(JSON.parse(savedCart));
+  const refreshCart = useCallback(async () => {
+    if (!user) {
+      setItems([]);
+      return;
     }
-  }, []);
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await CartService.getCart();
+      setItems(response.items);
+    } catch (err: any) {
+      console.error('Failed to fetch cart:', err);
+      setError('Не удалось загрузить корзину');
+      setItems([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
 
-  // Save cart to local storage
   useEffect(() => {
-    localStorage.setItem('shop_cart', JSON.stringify(items));
-  }, [items]);
+    refreshCart();
+  }, [refreshCart]);
 
-  const addToCart = (product: Product) => {
-    setItems(prev => {
-      const existing = prev.find(item => item.productId === product.id);
-      if (existing) {
-        return prev.map(item =>
-          item.productId === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
+  const addToCart = async (productId: number, quantity: number = 1) => {
+    if (!user) return;
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const existingItem = items.find(i => Number(i.product_id) === productId);
+      if (existingItem) {
+        await CartService.updateQuantity(existingItem.id, existingItem.quantity + quantity);
+      } else {
+        await CartService.addItem(productId, quantity);
       }
-      return [...prev, {
-        productId: product.id,
-        quantity: 1,
-        snapshotPrice: product.price, // Record price at time of addition
-        product: product
-      }];
-    });
+      // API возвращает один CartItem, а не всю корзину — перезагружаем корзину
+      await refreshCart();
+    } catch (err: any) {
+      setError('Ошибка при добавлении в корзину');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const removeFromCart = (productId: string) => {
-    setItems(prev => prev.filter(item => item.productId !== productId));
+  const removeFromCart = async (itemId: string) => {
+    if (!user) return;
+    // Оптимистичное удаление
+    const previousItems = [...items];
+    setItems(items.filter(i => i.id !== itemId));
+    setError(null);
+    try {
+      await CartService.removeItem(itemId);
+      // API возвращает 204 No Content — оптимистичное обновление уже применено
+    } catch (err: any) {
+      setError('Ошибка при удалении товара');
+      setItems(previousItems);
+      console.error(err);
+    }
   };
 
-  const updateQuantity = (productId: string, delta: number) => {
-    setItems(prev => prev.map(item => {
-      if (item.productId === productId) {
-        const newQty = Math.max(1, item.quantity + delta);
-        return { ...item, quantity: newQty };
-      }
-      return item;
-    }));
+  const updateQuantity = async (itemId: string, quantity: number) => {
+    if (!user) return;
+    // Оптимистичное обновление
+    const previousItems = [...items];
+    setItems(items.map(i => i.id === itemId ? { ...i, quantity } : i));
+    setError(null);
+    try {
+      await CartService.updateQuantity(itemId, quantity);
+      // API возвращает один CartItem — оптимистичное обновление уже применено
+    } catch (err: any) {
+      setError('Ошибка при изменении количества');
+      setItems(previousItems);
+      console.error(err);
+    }
   };
 
-  const clearCart = () => setItems([]);
+  const clearCart = async () => {
+    if (!user) return;
+    // Оптимистичная очистка
+    const previousItems = [...items];
+    setItems([]);
+    setError(null);
+    try {
+      await CartService.clearCart();
+      // API возвращает 204 No Content — оптимистичное обновление уже применено
+    } catch (err: any) {
+      setError('Ошибка при очистке корзины');
+      setItems(previousItems);
+      console.error(err);
+    }
+  };
 
-  const cartTotal = items.reduce((sum, item) => sum + (item.snapshotPrice * item.quantity), 0);
+  const cartTotal = items.reduce((sum, item) => sum + (Number(item.current_price ?? item.product_price) / 100 * item.quantity), 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, cartTotal, itemCount }}>
+    <CartContext.Provider value={{
+      items, addToCart, removeFromCart, updateQuantity, clearCart,
+      cartTotal, itemCount, isLoading, error, refreshCart
+    }}>
       {children}
     </CartContext.Provider>
   );

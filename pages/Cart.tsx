@@ -1,82 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart, useAuth } from '../store';
-import { Product, mapApiProductToProduct } from '../types';
-import ProductService from '../api/product.service';
-import { Button, Modal, Alert, Input } from '../components/UI';
+import { Button, Modal } from '../components/UI';
 import { Trash2, ArrowRight, Minus, Plus, Loader2 } from 'lucide-react';
 
-interface SmartCartItem {
-    productId: string;
-    quantity: number;
-    snapshotPrice: number;
-    product: Product;
-    liveProduct: Product | null;
-    livePrice: number;
-    isPriceChanged: boolean;
-    isUnavailable: boolean;
-    isDeleted: boolean;
-    stockLimit: number;
-}
-
 export const Cart = () => {
-    const { items, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
+    const { items, removeFromCart, updateQuantity, cartTotal, clearCart, isLoading } = useCart();
     const { user, login } = useAuth();
     const navigate = useNavigate();
     const [checkoutError, setCheckoutError] = useState<string | null>(null);
     const [isSuccess, setIsSuccess] = useState(false);
-    const [smartItems, setSmartItems] = useState<SmartCartItem[]>([]);
-    const [loading, setLoading] = useState(true);
 
-    // Fetch live product data for all cart items
-    useEffect(() => {
-        if (items.length === 0) {
-            setSmartItems([]);
-            setLoading(false);
-            return;
-        }
-
-        const fetchLiveData = async () => {
-            setLoading(true);
-            const results: SmartCartItem[] = [];
-            const categories = await ProductService.getCategories();
-
-            for (const item of items) {
-                try {
-                    const apiProduct = await ProductService.getProductById(Number(item.productId));
-                    const liveProduct = mapApiProductToProduct(apiProduct, categories);
-
-                    results.push({
-                        ...item,
-                        liveProduct,
-                        livePrice: liveProduct.price,
-                        isPriceChanged: liveProduct.price !== item.snapshotPrice,
-                        isUnavailable: !liveProduct.isActive || liveProduct.stock === 0,
-                        stockLimit: liveProduct.stock,
-                        isDeleted: false,
-                    });
-                } catch {
-                    // Product not found or API error
-                    results.push({
-                        ...item,
-                        liveProduct: null,
-                        livePrice: item.snapshotPrice,
-                        isPriceChanged: false,
-                        isUnavailable: true,
-                        stockLimit: 0,
-                        isDeleted: true,
-                    });
-                }
-            }
-
-            setSmartItems(results);
-            setLoading(false);
-        };
-
-        fetchLiveData();
-    }, [items]);
-
-    const hasUnavailableItems = smartItems.some(i => i.isUnavailable || i.isDeleted);
+    const hasUnavailableItems = items.some(i => i.out_of_stock || i.product_deleted);
     const deliveryFee = 500;
     const finalTotal = cartTotal + deliveryFee;
 
@@ -85,17 +20,7 @@ export const Cart = () => {
 
         // 1. Auth Check
         if (!user) {
-            await login(); // Prompt login
-            return;
-        }
-
-        // 2. Stock Validation
-        const stockErrorItem = smartItems.find(item =>
-            item.liveProduct && item.quantity > item.liveProduct.stock
-        );
-
-        if (stockErrorItem) {
-            setCheckoutError(`К сожалению, товар "${stockErrorItem.product.name}" остался в количестве ${stockErrorItem.stockLimit} шт.`);
+            login(); // Prompt login
             return;
         }
 
@@ -104,12 +29,12 @@ export const Cart = () => {
             return;
         }
 
-        // 3. Success
+        // 3. Success (Mock checkout for now, as Orders logic is separate)
         setIsSuccess(true);
         clearCart();
     };
 
-    if (loading) {
+    if (isLoading && items.length === 0) {
         return (
             <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center">
                 <Loader2 className="w-12 h-12 animate-spin text-gray-400" />
@@ -153,72 +78,79 @@ export const Cart = () => {
             <div className="flex flex-col lg:flex-row gap-8">
                 {/* Cart Items List */}
                 <div className="flex-1 space-y-4">
-                    {smartItems.map((item) => (
-                        <div
-                            key={item.productId}
-                            className={`flex gap-4 p-4 rounded-2xl border transition-all ${item.isUnavailable || item.isDeleted ? 'bg-gray-100 opacity-70 border-gray-200' :
-                                item.isPriceChanged ? 'bg-yellow-50 border-yellow-200 ring-1 ring-yellow-200' : 'bg-white border-gray-200'
-                                }`}
-                        >
-                            <Link to={`/product/${item.productId}`} className="w-24 h-24 bg-white rounded-xl shrink-0 border border-gray-100 overflow-hidden group">
-                                <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                            </Link>
+                    {items.map((item) => {
+                        const isUnavailable = item.out_of_stock || item.product_deleted;
+                        const actualPrice = Number(item.current_price ?? item.product_price) / 100;
 
-                            <div className="flex-1 flex flex-col justify-between">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <Link to={`/product/${item.productId}`}>
-                                            <h3 className="font-bold text-lg leading-tight transition-colors">{item.product.name}</h3>
-                                        </Link>
-                                        <p className="text-sm text-gray-500">
-                                            {Object.entries(item.product.attributes).slice(0, 1).map(([k, v]) => `${k}: ${v}`)}
-                                        </p>
+                        return (
+                            <div
+                                key={item.id}
+                                className={`flex gap-4 p-4 rounded-2xl border transition-all ${isUnavailable ? 'bg-gray-100 opacity-70 border-gray-200' :
+                                    item.price_changed ? 'bg-yellow-50 border-yellow-200 ring-1 ring-yellow-200' : 'bg-white border-gray-200'
+                                    }`}
+                            >
+                                <Link to={`/product/${item.product_id}`} className="w-24 h-24 bg-white rounded-xl shrink-0 border border-gray-100 overflow-hidden group">
+                                    {item.product_image ? (
+                                        <img src={item.product_image} alt={item.product_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                    ) : (
+                                        <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">Нет фото</div>
+                                    )}
+                                </Link>
 
-                                        {/* Warnings */}
-                                        {item.isPriceChanged && (
-                                            <p className="text-xs text-yellow-700 font-bold mt-1">
-                                                Цена изменилась: было ₽{item.snapshotPrice.toLocaleString()} → стало ₽{item.livePrice.toLocaleString()}
-                                            </p>
-                                        )}
-                                        {(item.isUnavailable || item.isDeleted) && (
-                                            <p className="text-xs text-red-600 font-bold mt-1">Товар больше не доступен</p>
+                                <div className="flex-1 flex flex-col justify-between">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <Link to={`/product/${item.product_id}`}>
+                                                <h3 className="font-bold text-lg leading-tight transition-colors">{item.product_name}</h3>
+                                            </Link>
+
+                                            {/* Warnings */}
+                                            {item.price_changed && (
+                                                <p className="text-xs text-yellow-700 font-bold mt-1">
+                                                    Цена изменилась: было ₽{(Number(item.product_price) / 100).toLocaleString()} → стало ₽{actualPrice.toLocaleString()}
+                                                </p>
+                                            )}
+                                            {isUnavailable && (
+                                                <p className="text-xs text-red-600 font-bold mt-1">Товар больше не доступен</p>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => removeFromCart(item.id)}
+                                            className="text-red-500 hover:bg-red-50 p-2 rounded-lg"
+                                            aria-label="Удалить из корзины"
+                                        >
+                                            <Trash2 size={20} />
+                                        </button>
+                                    </div>
+
+                                    <div className="flex justify-between items-end mt-2">
+                                        <h4 className="text-xl font-bold">₽{actualPrice.toLocaleString()}</h4>
+
+                                        {!isUnavailable && (
+                                            <div className="bg-shop-gray rounded-full px-3 py-1 flex items-center gap-3">
+                                                <button
+                                                    onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                                                    className="hover:text-black text-gray-600"
+                                                    aria-label="Уменьшить количество"
+                                                    disabled={item.quantity <= 1}
+                                                >
+                                                    <Minus size={16} />
+                                                </button>
+                                                <span className="font-medium text-sm w-4 text-center">{item.quantity}</span>
+                                                <button
+                                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                    className="hover:text-black text-gray-600"
+                                                    aria-label="Увеличить количество"
+                                                >
+                                                    <Plus size={16} />
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
-                                    <button
-                                        onClick={() => removeFromCart(item.productId)}
-                                        className="text-red-500 hover:bg-red-50 p-2 rounded-lg"
-                                        aria-label="Удалить из корзины"
-                                    >
-                                        <Trash2 size={20} />
-                                    </button>
-                                </div>
-
-                                <div className="flex justify-between items-end mt-2">
-                                    <h4 className="text-xl font-bold">₽{item.livePrice.toLocaleString()}</h4>
-
-                                    {!item.isUnavailable && !item.isDeleted && (
-                                        <div className="bg-shop-gray rounded-full px-3 py-1 flex items-center gap-3">
-                                            <button
-                                                onClick={() => updateQuantity(item.productId, -1)}
-                                                className="hover:text-black text-gray-600"
-                                                aria-label="Уменьшить количество"
-                                            >
-                                                <Minus size={16} />
-                                            </button>
-                                            <span className="font-medium text-sm w-4 text-center">{item.quantity}</span>
-                                            <button
-                                                onClick={() => updateQuantity(item.productId, 1)}
-                                                className="hover:text-black text-gray-600"
-                                                aria-label="Увеличить количество"
-                                            >
-                                                <Plus size={16} />
-                                            </button>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
 
                 {/* Order Summary */}
@@ -240,8 +172,6 @@ export const Cart = () => {
                                 <span>₽{finalTotal.toLocaleString()}</span>
                             </div>
                         </div>
-
-
 
                         <Button fullWidth onClick={handleCheckout} disabled={hasUnavailableItems}>
                             Оформить заказ <ArrowRight size={20} />
@@ -274,5 +204,4 @@ const AlertCircleIcon = ({ className }: { className: string }) => (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
     </svg>
-
 )

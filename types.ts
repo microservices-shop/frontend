@@ -25,12 +25,6 @@ export interface Product {
   attributes: Record<string, string>; // JSONB equivalent
 }
 
-export interface CartItem {
-  productId: string;
-  quantity: number;
-  snapshotPrice: number; // Price when added to cart
-  product: Product; // Hydrated product data (simulating join or fetch)
-}
 
 export interface User {
   id: string;

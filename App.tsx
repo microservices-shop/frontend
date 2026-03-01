@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider, CartProvider } from './store';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
@@ -23,7 +23,7 @@ const ScrollToTop = () => {
 
 const App = () => {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <AuthProvider>
         <CartProvider>
           <ScrollToTop />
@@ -46,7 +46,7 @@ const App = () => {
           </div>
         </CartProvider>
       </AuthProvider>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

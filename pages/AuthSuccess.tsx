@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../store';
+import { useAuth, useCart } from '../store';
 import { Loader2 } from 'lucide-react';
 
 export const AuthSuccess: React.FC = () => {
     const navigate = useNavigate();
     const { checkAuth, user } = useAuth();
+    const { addToCart } = useCart();
 
     useEffect(() => {
         const finalizeLogin = async () => {
@@ -21,11 +22,24 @@ export const AuthSuccess: React.FC = () => {
     }, [checkAuth, navigate]);
 
     useEffect(() => {
-        if (user) {
-            // Redirect to profile or home once user is loaded
+        if (!user) return;
+
+        // Обработка отложенного действия «добавить в корзину»
+        const pending = sessionStorage.getItem('pendingCartAction');
+        if (pending) {
+            sessionStorage.removeItem('pendingCartAction');
+            try {
+                const { productId, quantity, returnUrl } = JSON.parse(pending);
+                addToCart(productId, quantity).then(() => {
+                    navigate(returnUrl || '/');
+                });
+            } catch {
+                navigate('/');
+            }
+        } else {
             navigate('/profile');
         }
-    }, [user, navigate]);
+    }, [user, navigate, addToCart]);
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
