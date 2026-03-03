@@ -9,6 +9,7 @@ interface AuthContextType {
   user: User | null;
   login: () => void;
   logout: () => Promise<void>;
+  updateProfile: (data: { name: string }) => Promise<void>;
   isLoading: boolean;
   checkAuth: () => Promise<void>;
 }
@@ -74,8 +75,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateProfile = async (data: { name: string }) => {
+    setIsLoading(true);
+    try {
+      const updatedUser = await AuthService.updateMe(data);
+      setUser(updatedUser);
+    } catch (error) {
+      console.error('Update profile error:', error);
+      throw error; // Let the component handle display error
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading, checkAuth }}>
+    <AuthContext.Provider value={{ user, login, logout, updateProfile, isLoading, checkAuth }}>
       {children}
     </AuthContext.Provider>
   );
