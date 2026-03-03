@@ -93,8 +93,10 @@ interface CartContextType {
   addToCart: (productId: number, quantity?: number) => Promise<void>;
   removeFromCart: (itemId: string) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
+  toggleSelection: (itemId: string, is_selected: boolean) => Promise<void>;
+  toggleSelectAll: (is_selected: boolean) => Promise<void>;
   clearCart: () => Promise<void>;
-  cartTotal: number;
+  totalPrice: number;
   itemCount: number;
   isLoading: boolean;
   error: string | null;
@@ -106,12 +108,14 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [items, setItems] = useState<ApiCartItem[]>([]);
+  const [totalPrice, setTotalPrice] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const refreshCart = useCallback(async () => {
     if (!user) {
       setItems([]);
+      setTotalPrice(0);
       return;
     }
     setIsLoading(true);
@@ -119,6 +123,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await CartService.getCart();
       setItems(response.items);
+      setTotalPrice(response.total_price / 100); // копейки → рубли
     } catch (err: any) {
       console.error('Failed to fetch cart:', err);
       setError('Не удалось загрузить корзину');
@@ -144,7 +149,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         await CartService.addItem(productId, quantity);
       }
-      // API возвращает один CartItem, а не всю корзину — перезагружаем корзину
       await refreshCart();
     } catch (err: any) {
       setError('Ошибка при добавлении в корзину');
@@ -156,45 +160,43 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const removeFromCart = async (itemId: string) => {
     if (!user) return;
-    // Оптимистичное удаление
     const previousItems = [...items];
     setItems(items.filter(i => i.id !== itemId));
     setError(null);
     try {
       await CartService.removeItem(itemId);
-      // API возвращает 204 No Content — оптимистичное обновление уже применено
     } catch (err: any) {
       setError('Ошибка при удалении товара');
       setItems(previousItems);
       console.error(err);
     }
+    // Перезагружаем, чтобы получить актуальный total_price с бэкенда
+    await refreshCart();
   };
 
   const updateQuantity = async (itemId: string, quantity: number) => {
     if (!user) return;
-    // Оптимистичное обновление
     const previousItems = [...items];
     setItems(items.map(i => i.id === itemId ? { ...i, quantity } : i));
     setError(null);
     try {
       await CartService.updateQuantity(itemId, quantity);
-      // API возвращает один CartItem — оптимистичное обновление уже применено
     } catch (err: any) {
       setError('Ошибка при изменении количества');
       setItems(previousItems);
       console.error(err);
     }
+    await refreshCart();
   };
 
   const clearCart = async () => {
     if (!user) return;
-    // Оптимистичная очистка
     const previousItems = [...items];
     setItems([]);
+    setTotalPrice(0);
     setError(null);
     try {
       await CartService.clearCart();
-      // API возвращает 204 No Content — оптимистичное обновление уже применено
     } catch (err: any) {
       setError('Ошибка при очистке корзины');
       setItems(previousItems);
@@ -202,13 +204,53 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const cartTotal = items.reduce((sum, item) => sum + (Number(item.current_price ?? item.product_price) / 100 * item.quantity), 0);
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const toggleSelection = async (itemId: string, is_selected: boolean) => {
+    if (!user) return;
+    // Оптимистичное обновление флага
+    const previousItems = [...items];
+    setItems(items.map(i => i.id === itemId ? { ...i, is_selected } : i));
+    setError(null);
+    try {
+      await CartService.selectItem(itemId, is_selected);
+    } catch (err: any) {
+      setError('Ошибка при изменении выбора товара');
+      setItems(previousItems);
+      console.error(err);
+    }
+    // Синхронизируем total_price с бэкенда (не пересчитываем локально)
+    await refreshCart();
+  };
+
+  const toggleSelectAll = async (is_selected: boolean) => {
+    if (!user) return;
+    const previousItems = [...items];
+    // Оптимистично: выбираем только доступные товары при is_selected=true
+    setItems(items.map(i =>
+      (!is_selected || (!i.out_of_stock && !i.product_deleted))
+        ? { ...i, is_selected }
+        : i
+    ));
+    setError(null);
+    try {
+      await CartService.selectAll(is_selected);
+    } catch (err: any) {
+      setError('Ошибка при массовом выборе товаров');
+      setItems(previousItems);
+      console.error(err);
+    }
+    await refreshCart();
+  };
+
+  // itemCount — только выбранные товары (зеркалит логику бэкенда)
+  const itemCount = items
+    .filter(i => i.is_selected && !i.out_of_stock && !i.product_deleted)
+    .reduce((sum, i) => sum + i.quantity, 0);
 
   return (
     <CartContext.Provider value={{
-      items, addToCart, removeFromCart, updateQuantity, clearCart,
-      cartTotal, itemCount, isLoading, error, refreshCart
+      items, addToCart, removeFromCart, updateQuantity,
+      toggleSelection, toggleSelectAll, clearCart,
+      totalPrice, itemCount, isLoading, error, refreshCart
     }}>
       {children}
     </CartContext.Provider>

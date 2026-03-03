@@ -11,6 +11,7 @@ export interface ApiCartItem {
     current_price: number | null;
     out_of_stock: boolean;
     product_deleted: boolean;
+    is_selected: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -49,6 +50,20 @@ export const CartService = {
             quantity: quantity,
         });
         return response.data;
+    },
+
+    /**
+     * Переключить выбор конкретного товара в корзине
+     */
+    async selectItem(itemId: string, is_selected: boolean): Promise<void> {
+        await api.patch(`/api/cart/items/${itemId}/select`, { is_selected });
+    },
+
+    /**
+     * Выбрать / снять выбор со всех доступных товаров
+     */
+    async selectAll(is_selected: boolean): Promise<void> {
+        await api.patch('/api/cart/select-all', { is_selected });
     },
 
     /**
