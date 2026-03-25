@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart, useAuth } from '../store';
 import { Button, Modal } from '../components/UI';
 import { Trash2, ArrowRight, Minus, Plus, Loader2, ArrowDown, ArrowUp } from 'lucide-react';
@@ -154,10 +154,10 @@ CartItemCard.displayName = 'CartItemCard';
 
 // ─── Cart ─────────────────────────────────────────────────────────────────────
 export const Cart = () => {
+    const navigate = useNavigate();
     const { items, removeFromCart, updateQuantity, toggleSelection, toggleSelectAll, totalPrice, clearCart, isLoading } = useCart();
     const { user, login } = useAuth();
     const [checkoutError, setCheckoutError] = useState<string | null>(null);
-    const [isSuccess, setIsSuccess] = useState(false);
     const [pendingItems, setPendingItems] = useState<Set<string>>(new Set());
 
     // Один проход — O(n) без промежуточных массивов
@@ -207,8 +207,9 @@ export const Cart = () => {
             setCheckoutError('Выберите хотя бы один товар для оформления заказа.');
             return;
         }
-        setIsSuccess(true);
-        clearCart();
+        
+        // Redirect to new checkout flow
+        navigate('/checkout');
     };
 
     const deliveryFee = 100;
@@ -225,32 +226,13 @@ export const Cart = () => {
     }
 
     // ─── Empty ─────────────────────────────────────────────────────────────────
-    if (items.length === 0 && !isSuccess) {
+    if (items.length === 0) {
         return (
             <div className="container mx-auto px-4 py-20 text-center">
                 <h2 className="text-3xl font-display font-bold mb-4">ВАША КОРЗИНА ПУСТА</h2>
                 <p className="text-gray-500 mb-8">Похоже, вы еще ничего не добавили в корзину.</p>
                 <div className="flex justify-center">
                     <Link to="/catalog"><Button>Начать покупки</Button></Link>
-                </div>
-            </div>
-        );
-    }
-
-    // ─── Success ───────────────────────────────────────────────────────────────
-    if (isSuccess) {
-        return (
-            <div className="container mx-auto px-4 py-20 text-center animate-in zoom-in">
-                <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <CheckIcon size={40} />
-                </div>
-                <h2 className="text-4xl font-display font-bold mb-4 uppercase">Спасибо за ваш заказ!</h2>
-                <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                    Ваш заказ успешно оформлен. Вы получите подтверждение по электронной почте в ближайшее время.
-                </p>
-                <div className="flex justify-center gap-4">
-                    <Link to="/orders"><Button variant="outline">Посмотреть заказ</Button></Link>
-                    <Link to="/catalog"><Button>Продолжить покупки</Button></Link>
                 </div>
             </div>
         );

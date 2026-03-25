@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'outline' | 'ghost', fullWidth?: boolean }> = ({
   className = "", variant = 'primary', fullWidth, children, ...props
 }) => {
-  const baseStyle = "px-6 py-3 rounded-full font-medium transition-colors duration-200 flex items-center justify-center gap-2 select-none";
+  const baseStyle = "px-6 py-3 rounded-full font-medium transition-colors duration-200 inline-flex items-center justify-center gap-2 select-none";
   const variants = {
     primary: "bg-black text-white hover:bg-gray-800 disabled:bg-gray-400",
     secondary: "bg-shop-gray text-black hover:bg-gray-300",

@@ -9,6 +9,8 @@ import { ProductDetail } from './pages/ProductDetail';
 import { Cart } from './pages/Cart';
 import { Profile } from './pages/Profile';
 import { Orders } from './pages/Orders';
+import { OrderDetail } from './pages/OrderDetail';
+import { Checkout } from './pages/Checkout';
 import { Admin } from './pages/Admin';
 import { AuthSuccess } from './pages/AuthSuccess';
 import { ProductForm } from './pages/admin/ProductForm';
@@ -37,6 +39,8 @@ const App = () => {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/orders" element={<Orders />} />
+                <Route path="/orders/:id" element={<OrderDetail />} />
+                <Route path="/checkout" element={<Checkout />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/admin/products/new" element={<ProductForm />} />
                 <Route path="/auth/success" element={<AuthSuccess />} />

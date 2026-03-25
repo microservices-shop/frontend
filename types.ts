@@ -34,19 +34,79 @@ export interface User {
   role: 'user' | 'admin';
 }
 
-export interface Order {
-  id: string;
-  date: string;
-  status: 'Processing' | 'Shipped' | 'Delivered';
-  total: number;
-  items: {
-    name: string;
-    price: number;
-    quantity: number;
-    image: string;
-    attributes: Record<string, string>; // Snapshot of attributes
-  }[];
+// ============================================
+// Order Types (API Response format)
+// ============================================
+
+export interface OrderItemPreview {
+  product_image: string | null;
+  unit_price: number;
 }
+
+export interface OrderListItem {
+  id: string;
+  total_price: number;
+  created_at: string;
+  items: OrderItemPreview[];
+}
+
+export interface PaginatedOrders {
+  items: OrderListItem[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
+export interface OrderItemDetail {
+  product_id: number;
+  quantity: number;
+  unit_price: number;
+  product_name: string;
+  product_image: string | null;
+}
+
+export interface OrderDetail {
+  id: string;
+  total_price: number;
+  created_at: string;
+  items: OrderItemDetail[];
+}
+
+export interface CheckoutResponse {
+  order_id: string;
+  status: string;
+  total_price: number;
+}
+
+export interface PayResponse {
+  status: string;
+}
+
+// ============================================
+// Formatters
+// ============================================
+
+/**
+ * Форматирует цену из копеек в рубли
+ */
+export const formatPrice = (kopecks: number): string =>
+  `${(kopecks / 100).toLocaleString('ru-RU')} ₽`;
+
+/**
+ * Форматирует дату в русский формат
+ */
+export const formatDate = (isoDate: string): string =>
+  new Date(isoDate).toLocaleDateString('ru-RU', {
+    day: 'numeric', month: 'long', year: 'numeric'
+  });
+
+/**
+ * Форматирует UUID в короткий номер заказа (#)
+ */
+export const formatOrderId = (uuid: string): string =>
+  `#${uuid.slice(0, 8)}`;
+
 
 // ============================================
 // API Types & Mapping
