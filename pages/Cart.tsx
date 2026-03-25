@@ -212,8 +212,7 @@ export const Cart = () => {
         navigate('/checkout');
     };
 
-    const deliveryFee = 100;
-    const finalTotal = totalPrice + deliveryFee;
+    const finalTotal = totalPrice;
 
     // ─── Loading ───────────────────────────────────────────────────────────────
     if (isLoading && items.length === 0) {
@@ -325,10 +324,6 @@ export const Cart = () => {
                             <div className="flex justify-between text-gray-600">
                                 <span>Сумма выбранных</span>
                                 <span className="font-bold text-black">₽{totalPrice.toLocaleString()}</span>
-                            </div>
-                            <div className="flex justify-between text-gray-600">
-                                <span>Доставка</span>
-                                <span className="font-bold text-black">₽{deliveryFee.toLocaleString()}</span>
                             </div>
                             <div className="border-t pt-4 flex justify-between text-xl font-bold">
                                 <span>Итого</span>

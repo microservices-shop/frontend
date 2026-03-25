@@ -120,8 +120,7 @@ export const Checkout = () => {
                 </div>
                 <h2 className="text-4xl font-bold font-display text-gray-900 mb-4 uppercase">🎉 Спасибо за заказ!</h2>
                 <p className="text-gray-600 mb-8 text-lg max-w-md">
-                    Заказ {orderId ? `#${orderId.slice(0, 8)}` : ''} успешно оформлен и оплачен. 
-                    Информация о доставке отправлена на вашу почту.
+                    Заказ {orderId ? `#${orderId.slice(0, 8)}` : ''} успешно оформлен и оплачен.
                 </p>
                 <div className="flex gap-4">
                     <Link to="/orders">
@@ -170,7 +169,7 @@ export const Checkout = () => {
                             ОБРАБОТКА...
                         </span>
                     ) : (
-                        `ОПЛАТИТЬ — ${formatPrice(totalPrice)}`
+                        `ОПЛАТИТЬ ${formatPrice(totalPrice)}`
                     )}
                 </Button>
             </div>

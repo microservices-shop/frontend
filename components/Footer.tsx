@@ -47,7 +47,6 @@ export const Footer = () => {
                     <h4 className="font-bold uppercase tracking-widest mb-4">Помощь</h4>
                     <ul className="space-y-3 text-gray-600 text-sm">
                         <li><Link to="#">Поддержка</Link></li>
-                        <li><Link to="#">Детали доставки</Link></li>
                         <li><Link to="#">Условия использования</Link></li>
                         <li><Link to="#">Политика конфиденциальности</Link></li>
                     </ul>
@@ -57,7 +56,6 @@ export const Footer = () => {
                     <h4 className="font-bold uppercase tracking-widest mb-4">FAQ</h4>
                     <ul className="space-y-3 text-gray-600 text-sm">
                         <li><Link to="#">Аккаунт</Link></li>
-                        <li><Link to="#">Управление доставками</Link></li>
                         <li><Link to="#">Заказы</Link></li>
                         <li><Link to="#">Платежи</Link></li>
                     </ul>
