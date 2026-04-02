@@ -77,6 +77,7 @@ export interface CheckoutResponse {
   order_id: string;
   status: string;
   total_price: number;
+  items: OrderItemDetail[];
 }
 
 export interface PayResponse {
