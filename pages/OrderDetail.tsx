@@ -19,7 +19,7 @@ const OrderItemSkeleton = () => (
 export const OrderDetail = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, isLoading: authLoading } = useAuth();
     
     const [order, setOrder] = useState<OrderDetailType | null>(null);
     const [loading, setLoading] = useState(true);
@@ -52,6 +52,15 @@ export const OrderDetail = () => {
     }, [id, user]);
 
     // Error states handling
+    if (authLoading) {
+        return (
+            <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center">
+                <div className="animate-spin w-12 h-12 border-4 border-gray-200 border-t-black rounded-full mb-4"></div>
+                <p className="text-gray-500 text-sm font-medium">Проверка авторизации...</p>
+            </div>
+        );
+    }
+
     if (!user) return null; // handled via route/App.tsx later or redirect
 
     if (notFound) {

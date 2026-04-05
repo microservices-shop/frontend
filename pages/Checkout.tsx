@@ -15,7 +15,7 @@ type CheckoutState =
     | 'SUCCESS';
 
 export const Checkout = () => {
-    const { user } = useAuth();
+    const { user, isLoading: authLoading } = useAuth();
     const navigate = useNavigate();
     const { refreshCart } = useCart();
 
@@ -30,6 +30,8 @@ export const Checkout = () => {
     const idempotencyKey = useRef<string>('');
 
     useEffect(() => {
+        if (authLoading) return;
+
         if (!user) {
             navigate('/');
             return;
@@ -42,7 +44,7 @@ export const Checkout = () => {
         }
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user, navigate]);
+    }, [user, navigate, authLoading]);
 
     const performCheckout = async () => {
         setState('RESERVING');
@@ -54,7 +56,13 @@ export const Checkout = () => {
             setState('READY_TO_PAY');
         } catch (err: any) {
             const status = err.response?.status;
-            setErrorMsg(err.response?.data?.detail || 'Произошла непредвиденная ошибка');
+            let detail = err.response?.data?.detail || 'Произошла непредвиденная ошибка';
+
+            if (detail === 'Item out of stock') {
+                detail = 'Недостаточно товара на складе';
+            }
+
+            setErrorMsg(detail);
 
             if (status === 400) {
                 // Out of stock or empty cart
@@ -129,9 +137,9 @@ export const Checkout = () => {
 
         const itemVariants = {
             hidden: { opacity: 0, y: 20, scale: 0.95 },
-            visible: { 
-                opacity: 1, 
-                y: 0, 
+            visible: {
+                opacity: 1,
+                y: 0,
                 scale: 1,
                 transition: { type: 'spring', stiffness: 100, damping: 15 }
             }
@@ -154,16 +162,16 @@ export const Checkout = () => {
                     animate="visible"
                     className="relative z-10 flex flex-col items-center"
                 >
-                    <motion.div 
+                    <motion.div
                         variants={itemVariants}
                         className="w-24 h-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-10 shadow-lg shadow-green-100"
                     >
                         <motion.div
                             initial={{ scale: 0, rotate: -45 }}
                             animate={{ scale: 1, rotate: 0 }}
-                            transition={{ 
-                                type: 'spring', 
-                                stiffness: 260, 
+                            transition={{
+                                type: 'spring',
+                                stiffness: 260,
                                 damping: 20,
                                 delay: 0.2
                             }}
@@ -172,14 +180,14 @@ export const Checkout = () => {
                         </motion.div>
                     </motion.div>
 
-                    <motion.h2 
+                    <motion.h2
                         variants={itemVariants}
                         className="text-4xl sm:text-5xl font-extrabold font-display text-gray-900 mb-4 tracking-tight"
                     >
                         🎉 СПАСИБО ЗА ЗАКАЗ!
                     </motion.h2>
 
-                    <motion.p 
+                    <motion.p
                         variants={itemVariants}
                         className="text-gray-500 mb-10 text-lg sm:text-xl max-w-md font-medium"
                     >

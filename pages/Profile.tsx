@@ -4,7 +4,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { Button, Input, Alert } from '../components/UI';
 
 export const Profile = () => {
-    const { user, logout, updateProfile } = useAuth();
+    const { user, logout, updateProfile, isLoading: authLoading } = useAuth();
     const navigate = useNavigate();
 
     const [isEditing, setIsEditing] = useState(false);
@@ -40,6 +40,15 @@ export const Profile = () => {
         setNewName(user?.name || '');
         setError(null);
     };
+
+    if (authLoading) {
+        return (
+            <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center">
+                <div className="animate-spin w-12 h-12 border-4 border-gray-200 border-t-black rounded-full mb-4"></div>
+                <p className="text-gray-500 text-sm font-medium">Проверка авторизации...</p>
+            </div>
+        );
+    }
 
     if (!user) return <Navigate to="/" />;
 

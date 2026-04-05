@@ -126,7 +126,7 @@ const OrderCard: React.FC<{ order: OrderListItem }> = ({ order }) => {
 };
 
 export const Orders = () => {
-    const { user } = useAuth();
+    const { user, isLoading: authLoading } = useAuth();
     const [data, setData] = useState<PaginatedOrders | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -153,6 +153,15 @@ export const Orders = () => {
         // Scroll to top on page change
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [page, user]);
+
+    if (authLoading) {
+        return (
+            <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center">
+                <div className="animate-spin w-12 h-12 border-4 border-gray-200 border-t-black rounded-full mb-4"></div>
+                <p className="text-gray-500 text-sm font-medium">Проверка авторизации...</p>
+            </div>
+        );
+    }
 
     if (!user) return <Navigate to="/" />;
 
