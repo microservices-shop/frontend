@@ -324,31 +324,41 @@ export const Catalog = () => {
                         <>
                             <div key={`${currentPage}-${sortOrder}-${categoryParam || ''}-${priceMinParam}-${priceMaxParam}`}>
                                 <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {products.map(product => (
+                                    {products.map(product => {
+                                        const outOfStock = product.stock === 0;
+                                        return (
                                         <StaggerItem key={product.id}>
                                             <Link
                                                 to={`/product/${product.id}`}
                                                 state={{ from: location }}
                                                 className="group cursor-pointer block h-full"
                                             >
-                                                <div className="bg-shop-gray rounded-[20px] aspect-square mb-4 overflow-hidden relative transform-gpu">
+                                                <div className={`bg-shop-gray rounded-[20px] aspect-square mb-4 overflow-hidden relative transform-gpu${outOfStock ? ' grayscale opacity-60' : ''}`}>
                                                     <motion.img
-                                                        whileHover={{ scale: 1.05 }}
+                                                        whileHover={outOfStock ? {} : { scale: 1.05 }}
                                                         transition={{ duration: 0.3 }}
                                                         src={product.images[0]}
                                                         alt={product.name}
                                                         loading="lazy"
                                                         className="w-full h-full object-cover"
                                                     />
+                                                    {outOfStock && (
+                                                        <div className="absolute inset-0 flex items-end justify-center pb-4">
+                                                            <span className="bg-black/70 text-white px-4 py-1.5 text-xs font-bold rounded-full backdrop-blur-sm">
+                                                                Нет в наличии
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <h3 className="font-bold text-lg leading-tight mb-1 truncate">{product.name}</h3>
+                                                <h3 className={`font-bold text-lg leading-tight mb-1 truncate${outOfStock ? ' text-gray-400' : ''}`}>{product.name}</h3>
 
                                                 <div className="flex items-center gap-3">
-                                                    <span className="font-bold text-xl">₽{product.price.toLocaleString()}</span>
+                                                    <span className={`font-bold text-xl${outOfStock ? ' text-gray-400' : ''}`}>₽{product.price.toLocaleString()}</span>
                                                 </div>
                                             </Link>
                                         </StaggerItem>
-                                    ))}
+                                        );
+                                    })}
                                 </StaggerContainer>
 
                                 {/* Pagination */}

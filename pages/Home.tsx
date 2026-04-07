@@ -51,7 +51,7 @@ export const Home = () => {
                 ]);
                 setCategories(categoriesRes);
                 const mapped = productsRes.items.map(p => mapApiProductToProduct(p, categoriesRes));
-                setNewArrivals(mapped.filter(p => p.isActive).slice(0, 4));
+                setNewArrivals(mapped.filter(p => p.isActive && p.stock > 0).slice(0, 4));
             } catch (err) {
                 console.error('Failed to load products:', err);
             } finally {

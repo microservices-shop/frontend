@@ -160,7 +160,14 @@ export const ProductDetail = () => {
                         <h1 className="text-4xl font-display font-extrabold uppercase leading-tight mb-2">{product.name}</h1>
                     </FadeIn>
 
-
+                    {(!product.isActive || product.stock === 0) && (
+                        <FadeIn delay={0.3}>
+                            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 flex items-center gap-3">
+                                <span className="text-amber-600 text-lg">⚠</span>
+                                <span className="text-amber-800 font-medium text-sm">Товар временно отсутствует в наличии</span>
+                            </div>
+                        </FadeIn>
+                    )}
 
                     <FadeIn delay={0.4} className="flex items-center gap-4 mb-6">
                         <span className="text-3xl font-bold">₽{product.price.toLocaleString()}</span>
