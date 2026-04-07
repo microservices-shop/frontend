@@ -8,13 +8,22 @@ import { Button, Input, Modal } from '../components/UI';
 import { Plus, Trash2, Edit2, Save, Loader2 } from 'lucide-react';
 
 export const Admin = () => {
-    const { user } = useAuth();
+    const { user, isLoading: authLoading } = useAuth();
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<ApiCategory[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
     const [saving, setSaving] = useState(false);
+
+    if (authLoading) {
+        return (
+            <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center">
+                <div className="animate-spin w-12 h-12 border-4 border-gray-200 border-t-black rounded-full mb-4"></div>
+                <p className="text-gray-500 text-sm font-medium">Проверка прав доступа...</p>
+            </div>
+        );
+    }
 
     if (!user || user.role !== 'admin') return <Navigate to="/" />;
 
