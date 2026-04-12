@@ -11,8 +11,13 @@ import { Profile } from './pages/Profile';
 import { Orders } from './pages/Orders';
 import { OrderDetail } from './pages/OrderDetail';
 import { Checkout } from './pages/Checkout';
-import { Admin } from './pages/Admin';
 import { AuthSuccess } from './pages/AuthSuccess';
+
+// Admin imports
+import { AdminLayout } from './pages/admin/AdminLayout';
+import { AdminProducts } from './pages/admin/AdminProducts';
+import { AdminCategories } from './pages/admin/AdminCategories';
+import { AdminAttributes } from './pages/admin/AdminAttributes';
 import { ProductForm } from './pages/admin/ProductForm';
 
 const ScrollToTop = () => {
@@ -41,9 +46,16 @@ const App = () => {
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/orders/:id" element={<OrderDetail />} />
                 <Route path="/checkout" element={<Checkout />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/admin/products/new" element={<ProductForm />} />
                 <Route path="/auth/success" element={<AuthSuccess />} />
+                
+                {/* Admin Routes */}
+                <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<AdminProducts />} />
+                    <Route path="categories" element={<AdminCategories />} />
+                    <Route path="attributes" element={<AdminAttributes />} />
+                    <Route path="products/new" element={<ProductForm />} />
+                    <Route path="products/:id/edit" element={<ProductForm />} />
+                </Route>
               </Routes>
             </main>
             <Footer />
