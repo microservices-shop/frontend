@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Product, mapApiProductToProduct } from '../../types';
+import { Product, mapApiProductToProduct, CATEGORY_LABELS, Category } from '../../types';
 import ProductService, { ApiCategory } from '../../api/product.service';
 import AdminService from '../../api/admin.service';
 import { Button } from '../../components/UI';
@@ -44,10 +44,11 @@ export const AdminProducts = () => {
         }
     };
 
-    const filteredProducts = products.filter(p => 
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredProducts = products.filter(p => {
+        const categoryLabel = CATEGORY_LABELS[p.category as Category] || p.category;
+        return p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+               categoryLabel.toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
     if (loading) {
         return (
@@ -109,7 +110,7 @@ export const AdminProducts = () => {
                                     </td>
                                     <td className="p-4">
                                         <span className="bg-gray-100 text-gray-800 px-2.5 py-1 rounded-md text-xs font-medium uppercase tracking-wider">
-                                            {p.category}
+                                            {CATEGORY_LABELS[p.category as Category] || p.category}
                                         </span>
                                     </td>
                                     <td className="p-4 font-bold whitespace-nowrap">₽{p.price.toLocaleString()}</td>
